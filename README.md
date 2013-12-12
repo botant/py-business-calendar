@@ -10,9 +10,9 @@ Python has many different implementations of datetime functions in `datetime`, `
 - `datetime`: basic date framework without any business day functionality at all.
 - `dateutil`: fantastic package with lots of cool features, but it is built around `rrule` and `rruleset` which are date generators, therefore not very easy to use in simple calculations.
 - `numpy`: datetime functions were added in version 1.7.0, and although promissing, they suffer from a few problems:
- - all calculations are performed on `np.datetime64` objects, so if you are not using `numpy` types you need to do two way convertions every time you do a calculation.
- - the API is experimental.
- - it is a bit too complex if all you want is to calculate the number of business days between Jan-10 and Mar-25.
+  - all calculations are performed on `np.datetime64` objects, so if you are not using `numpy` types you need to do two way convertions every time you do a calculation.
+  - the API is experimental.
+  - it is a bit too complex if all you want is to calculate the number of business days between Jan-10 and Mar-25.
 - `pandas`: another fantastic package, but again the functions operate on its own internal type and holidays are not quite handled yet.
 
 ## Example ##
