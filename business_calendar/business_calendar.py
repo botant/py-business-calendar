@@ -1,23 +1,31 @@
 """
-business_calendar
+The business_calendar contains the main class Calendar.
 
-A simple class that handles business day calculations, including custom work
-days and holidays.
+This module doesn't require any third-party package but will use `dateutil`
+for parsing if it is present. For testing however, `nose` and `dateutil`
+are required.
 
-This class is interactive environment friendly, so all functions that expect
-datetime arguments will also accept strings.
+In this module we adopt `weekdays()`, so Monday corresponds to 0 and Sunday
+corresponds to 6, therefore there is a natural index of days of the week as a
+list.
 
-Doesn't require any third-party package, except dateutil, which will be used
-for parsing if it is present. For testing however, nose and dateutil are
-required.
+As default, `dateutil.parser.parse` is used as parser if dateutil is
+found. Otherwise, a simple parser function expecting `%Y-%m-%d` is used.
+You may **override** the parse function by assigning to the module variable
+`parsefun`.
 
-NOTES:
-1) In this package we adopt weekdays, so Monday corresponds to 0 and
-   Sunday corresponds to 6, therefore there is a natural index of days of the
-   week as a list.
-2) As default, dateutil.parser.parse is used as parser if dateutil is found.
-   Otherwise, a simple parser function expecting %Y-%m-%d is used. You may
-   override the parse function by assigning to the module variable 'parsefun'.
+Classes:
+    Calendar
+
+Constants:
+    MO, TU, WE, TH, FR, SA, SU,
+    FOLLOWING, PREVIOUS, MODIFIEDFOLLOWING
+
+Public Functions:
+    parsefun
+
+Warnings:
+    CalendarHolidayWarning
 """
 import bisect
 import collections
@@ -25,9 +33,10 @@ import datetime
 import warnings
 
 __version__ = '0.1'
-__all__ = ['Calendar', 'FOLLOWING', 'PREVIOUS', 'MODIFIEDFOLLOWING',
+__all__ = ['Calendar',
+           'FOLLOWING', 'PREVIOUS', 'MODIFIEDFOLLOWING',
            'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU',
-           'parsefun', 'warn',
+           'parsefun',
            'CalendarHolidayWarning']
 
 # constants used in date functions
@@ -77,16 +86,39 @@ def warn(message):
 
 # main class
 class Calendar(object):
+    """
+    Class that represents a calendar with work and rest days, as well as
+    holidays (which of course are rest days).
 
+    Note:
+        All functions will accept either a `str`, a `datetime.datetime` or a
+        `datetime.date`, so this class is interactive enviroment-friendly.
+        However, functions will return a proper datetime.datetime object
+        whenever the argument is a str object.
+    """
+
+    # create internal index variables to speed up access to DayOfWeek
     _idx_nextworkday = DayOfWeek._fields.index('nextworkday')
     _idx_offsetnext = DayOfWeek._fields.index('offsetnext')
     _idx_prevworkday = DayOfWeek._fields.index('prevworkday')
     _idx_offsetprev = DayOfWeek._fields.index('offsetprev')
 
     def __init__(self, workdays=[MO,TU,WE,TH,FR], holidays=[]):
+        """
+        Initialize object and creates the week day map.
+
+        Args:
+            workdays: List or tuple of week days considered 'work days'.
+                Anything not in this list is considered a rest day.
+                Defaults to [MO,TU,WE,TH,FR].
+            holidays: List or tuple of holidays (or strings).
+                Default is [].
+        """
         self.workdays = sorted(list(set(workdays))) # sorted and unique
 
-        # create week day map structure in local variable to speed up function
+        # create week day map structure in local variable to speed up
+        # this structure is the soul of this class, it is used in all
+        # calculations and is the secret that enables the custom work day list
         weekdaymap = []
         for wk in range(0,7):
             wmap = {}
@@ -135,10 +167,28 @@ class Calendar(object):
             [h for h in holidays if weekdaymap[h.weekday()].isworkday])
 
     def isworkday(self, date):
+        """
+        Check if a given date is a work date, ignoring holidays.
+
+        Args:
+            date (date, datetime or str): Date to be checked.
+
+        Returns:
+            bool: True if the date is a work date, False otherwise.
+        """
         date = parsefun(date)
         return self.weekdaymap[date.weekday()].isworkday
 
     def isholiday(self, date):
+        """
+        Check if a given date is a holiday.
+
+        Args:
+            date (date, datetime or str): Date to be checked.
+
+        Returns:
+            bool: True if the date is a holiday, False otherwise.
+        """
         date = parsefun(date)
         if self.holidays:
             # i is the index of first holiday >= date
@@ -154,9 +204,42 @@ class Calendar(object):
         return False
 
     def isbusday(self, date):
+        """
+        Check if a given date is a business date, taking into consideration
+        the work days and holidays.
+
+        Args:
+            date (date, datetime or str): Date to be checked.
+
+        Returns:
+            bool: True if the date is a business date, False otherwise.
+        """
         return self.isworkday(date) and not self.isholiday(date)
 
     def adjust(self, date, mode):
+        """
+        Adjust the date to the closest work date.
+
+        Args:
+            date (date, datetime or str): Date to be adjusted.
+            mode (integer): FOLLOWING, PREVIOUS or MODIFIEDFOLLOWING.
+
+        Note:
+            If date is already a business date than it is returned unchanged.
+            How to use the adjustment constants:
+
+            **FOLLOWING**:
+                Adjust to the next business date.
+            **PREVIOUS**:
+                Adjust to the previous business date.
+            **MODIFIEDFOLLOWING**:
+                Adjust to the next business date unless it falls on a
+                different month, in which case adjust to the previous business
+                date.
+
+        Returns:
+            datetime: Adjusted date.
+        """
         date = parsefun(date)
         if self.isbusday(date):
             return date
@@ -175,6 +258,23 @@ class Calendar(object):
         return dateadj
 
     def addworkdays(self, date, offset):
+        """
+        Add work days to a given date, ignoring holidays.
+
+        Note:
+            By definition, a zero offset causes the function to return the
+            initial date, even it is not a work date. An offset of 1
+            represents the next work date, regardless of date being a work
+            date or not.
+
+        Args:
+            date (date, datetime or str): Date to be incremented.
+            offset (integer): Number of work days to add. Positive values move
+                the date forward and negative values move the date back.
+
+        Returns:
+            datetime: New incremented date.
+        """
         date = parsefun(date)
         if offset == 0:
             return date
@@ -212,6 +312,23 @@ class Calendar(object):
         return date
 
     def addbusdays(self, date, offset):
+        """
+        Add business days to a given date, taking holidays into consideration.
+
+        Note:
+            By definition, a zero offset causes the function to return the
+            initial date, even it is not a business date. An offset of 1
+            represents the next business date, regardless of date being a
+            business date or not.
+
+        Args:
+            date (date, datetime or str): Date to be incremented.
+            offset (integer): Number of business days to add. Positive values
+                move the date forward and negative values move the date back.
+
+        Returns:
+            datetime: New incremented date.
+        """
         date = parsefun(date)
         if offset == 0:
             return date
@@ -276,6 +393,29 @@ class Calendar(object):
         return ndays
 
     def workdaycount(self, date1, date2):
+        """
+        Count work days between two dates (private), ignoring holidays.
+
+        Args:
+            date1 (date, datetime or str): Date start of interval.
+            date2 (date, datetime or str): Date end of interval.
+
+        Note:
+            The adopted notation is COB to COB, so effectively date1 is not
+            included in the calculation result.
+
+        Example:
+            >>> cal = Calendar()
+            >>> date1 = datetime.datetime.today()
+            >>> date2 = cal.addworkdays(date1, 1)
+            >>> cal.workdaycount(date1, date2)
+            1
+
+        Returns:
+            int: Number of work days between the two dates. If the dates
+                are equal the result is zero. If date1 > date2 the result is
+                negative.
+        """
         date1 = parsefun(date1)
         date2 = parsefun(date2)
         if date1 == date2:
@@ -290,6 +430,30 @@ class Calendar(object):
         return ndays * direction
 
     def busdaycount(self, date1, date2):
+        """
+        Count business days between two dates (private), taking holidays into
+        consideration.
+
+        Args:
+            date1 (date, datetime or str): Date start of interval.
+            date2 (date, datetime or str): Date end of interval.
+
+        Note:
+            The adopted notation is COB to COB, so effectively date1 is not
+            included in the calculation result.
+
+        Example:
+            >>> cal = Calendar()
+            >>> date1 = datetime.datetime.today()
+            >>> date2 = cal.addbusdays(date1, 1)
+            >>> cal.busdaycount(date1, date2)
+            1
+
+        Returns:
+            int: Number of business days between the two dates. If the dates
+                are equal the result is zero. If date1 > date2 the result is
+                negative.
+        """
         date1 = parsefun(date1)
         date2 = parsefun(date2)
         if date1 == date2:
@@ -333,15 +497,49 @@ class Calendar(object):
         return ndays * direction
 
     def caleom(self, date):
+        """
+        Adjust date to last day of the month, regardless of work days.
+
+        Args:
+            date (date, datetime or str): Date to be adjusted.
+
+        Returns:
+            datetime: Adjusted date.
+        """
         date = parsefun(date)
         date += datetime.timedelta(days=32-date.day)
         date -= datetime.timedelta(days=date.day)
         return date
 
     def buseom(self, date):
+        """
+        Adjust date to last business day of the month, taking holidays into
+        consideration.
+
+        Args:
+            date (date, datetime or str): Date to be adjusted.
+
+        Returns:
+            datetime: Adjusted date.
+        """
         return self.adjust(self.caleom(date), PREVIOUS)
 
     def range(self, date1, date2):
+        """
+        Generate business days between two dates, taking holidays into
+        consideration.
+
+        Args:
+            date1 (date, datetime or str): Date start of interval.
+            date2 (date, datetime or str): Date end of interval, not included.
+
+        Note:
+            All business days between date1 (inc) and date2 (exc) are returned,
+            and date2 must be bigger than date1.
+
+        Yields:
+            datetime: Business days in the specified range.
+        """
         date1 = self.adjust(parsefun(date1), FOLLOWING)
         date2 = parsefun(date2)
 

@@ -365,7 +365,6 @@ class TestCalendarWesternWeek(BaseCalendarTest):
     def __init__(self):
         BaseCalendarTest.__init__(self)
         self.cal = Calendar()
-        self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
         rr.rrule(rrule(DAILY,
                        byweekday=(MO,TU,WE,TH,FR),
@@ -383,7 +382,6 @@ class TestCalendarCrazyWeek(BaseCalendarTest):
     def __init__(self):
         BaseCalendarTest.__init__(self)
         self.cal = Calendar(workdays=[0,1,4,6])
-        self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
         rr.rrule(rrule(DAILY,
                        byweekday=(MO,TU,FR,SU),
@@ -425,7 +423,6 @@ class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
         BaseCalendarTest.__init__(self)
         self.holidays = [parse(x) for x in global_holidays.split('\n')]
         self.cal = Calendar(workdays=[0,1,4,6], holidays=self.holidays)
-        self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
         rr.rrule(rrule(DAILY,
                        byweekday=(MO,TU,FR,SU),
@@ -447,7 +444,6 @@ class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
         BaseCalendarTest.__init__(self)
         self.holidays = [parse(x) for x in global_holidays.split('\n')]
         self.cal = Calendar(workdays=[0], holidays=self.holidays)
-        self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
         rr.rrule(rrule(DAILY,
                        byweekday=(MO),
