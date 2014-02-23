@@ -59,9 +59,9 @@
 <p>This module doesn&#8217;t require any third-party package but will use <cite>dateutil</cite>
 for parsing if it is present. For testing however, <cite>nose</cite> and <cite>dateutil</cite>
 are required.</p>
-<p>In this module we adopt <cite>weekdays()</cite>, so Monday corresponds to 0 and Sunday
-corresponds to 6, therefore there is a natural index of days of the week as a
-list.</p>
+<p>In this module we adopt <cite>weekdays()</cite> notation, so Monday corresponds
+to 0 and Sunday corresponds to 6, therefore there is a natural index of days
+of the week as a list.</p>
 <p>As default, <cite>dateutil.parser.parse</cite> is used as parser if dateutil is
 found. Otherwise, a simple parser function expecting <cite>%Y-%m-%d</cite> is used.
 You may <strong>override</strong> the parse function by assigning to the module variable
@@ -488,7 +488,7 @@ Business days in the specified range.</td>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2013, Antonio Botelho.
+        &copy; Copyright 2014, Antonio Botelho.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>

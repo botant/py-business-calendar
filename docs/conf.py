@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'business_calendar'
-copyright = '2013, Antonio Botelho'
+copyright = '2014, Antonio Botelho'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

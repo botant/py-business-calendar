@@ -5,9 +5,9 @@ This module doesn't require any third-party package but will use `dateutil`
 for parsing if it is present. For testing however, `nose` and `dateutil`
 are required.
 
-In this module we adopt `weekdays()`, so Monday corresponds to 0 and Sunday
-corresponds to 6, therefore there is a natural index of days of the week as a
-list.
+In this module we adopt `weekdays()` notation, so Monday corresponds 
+to 0 and Sunday corresponds to 6, therefore there is a natural index of days 
+of the week as a list.
 
 As default, `dateutil.parser.parse` is used as parser if dateutil is
 found. Otherwise, a simple parser function expecting `%Y-%m-%d` is used.
