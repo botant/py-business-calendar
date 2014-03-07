@@ -5,8 +5,8 @@ This module doesn't require any third-party package but will use `dateutil`
 for parsing if it is present. For testing however, `nose` and `dateutil`
 are required.
 
-In this module we adopt `weekdays()` notation, so Monday corresponds 
-to 0 and Sunday corresponds to 6, therefore there is a natural index of days 
+In this module we adopt `weekdays()` notation, so Monday corresponds
+to 0 and Sunday corresponds to 6, therefore there is a natural index of days
 of the week as a list.
 
 As default, `dateutil.parser.parse` is used as parser if dateutil is
@@ -57,17 +57,21 @@ DayOfWeek = collections.namedtuple('DayOfWeek', ['dayofweek', 'isworkday',
                                                  'nextworkday', 'offsetnext',
                                                  'prevworkday', 'offsetprev'])
 
+
 # portable function to parse dates
+# pylint: disable=C0103
 def _simpleparsefun(date):
+    """Simple date parsing function"""
     if hasattr(date, 'year'):
         return date
     try:
         date = datetime.datetime.strptime(date, '%Y-%m-%d')
-    except:
+    except ValueError:
         date = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
     return date
 
 def _dateutilparsefun(date):
+    """dateutil parsing function"""
     if hasattr(date, 'year'):
         return date
     return _dateutil_parse(date)
@@ -75,16 +79,22 @@ def _dateutilparsefun(date):
 try:
     from dateutil.parser import parse as _dateutil_parse
     parsefun = _dateutilparsefun
-except:
+except ImportError:
     parsefun = _simpleparsefun
 
+
 # warning function
-class CalendarHolidayWarning(Warning): pass
+class CalendarHolidayWarning(Warning):
+    """Warning thrown by Calendar class"""
+    pass
 
 def warn(message):
+    """Throw warning with a message"""
     warnings.warn(CalendarHolidayWarning(message), stacklevel=3)
 
+
 # main class
+# pylint: disable=R0912
 class Calendar(object):
     """
     Class that represents a calendar with work and rest days, as well as
@@ -98,73 +108,82 @@ class Calendar(object):
     """
 
     # create internal index variables to speed up access to DayOfWeek
+    # pylint: disable=W0142
+    # pylint: disable=W0212
+    # pylint: disable=E1101
     _idx_nextworkday = DayOfWeek._fields.index('nextworkday')
     _idx_offsetnext = DayOfWeek._fields.index('offsetnext')
     _idx_prevworkday = DayOfWeek._fields.index('prevworkday')
     _idx_offsetprev = DayOfWeek._fields.index('offsetprev')
 
-    def __init__(self, workdays=[MO,TU,WE,TH,FR], holidays=[]):
+    def __init__(self, workdays=None, holidays=None):
         """
         Initialize object and creates the week day map.
 
         Args:
             workdays: List or tuple of week days considered 'work days'.
                 Anything not in this list is considered a rest day.
-                Defaults to [MO,TU,WE,TH,FR].
+                Defaults to [MO, TU, WE, TH, FR].
             holidays: List or tuple of holidays (or strings).
                 Default is [].
         """
-        self.workdays = sorted(list(set(workdays))) # sorted and unique
+        if workdays is None:
+            self.workdays = [MO, TU, WE, TH, FR]
+        else:
+            self.workdays = sorted(list(set(workdays))) # sorted and unique
+
+        if holidays is None:
+            holidays = []
 
         # create week day map structure in local variable to speed up
         # this structure is the soul of this class, it is used in all
         # calculations and is the secret that enables the custom work day list
         weekdaymap = []
-        for wk in range(0,7):
+        for wkday in range(0, 7):
             wmap = {}
-            wmap['dayofweek'] = wk
-            if wk in self.workdays:
+            wmap['dayofweek'] = wkday
+            if wkday in self.workdays:
                 wmap['isworkday'] = True
-                i = self.workdays.index(wk)
+                i = self.workdays.index(wkday)
                 # assign transition to next work day
                 if i == len(self.workdays) - 1: # last work day of week
                     wmap['nextworkday'] = self.workdays[0]
-                    wmap['offsetnext'] = wmap['nextworkday'] + 7 - wk
+                    wmap['offsetnext'] = wmap['nextworkday'] + 7 - wkday
                 else:
                     wmap['nextworkday'] = self.workdays[i+1]
-                    wmap['offsetnext'] = wmap['nextworkday'] - wk
+                    wmap['offsetnext'] = wmap['nextworkday'] - wkday
                 # assign transition to previous work day
                 if i == 0: # first work day of week
                     wmap['prevworkday'] = self.workdays[-1]
-                    wmap['offsetprev'] = wmap['prevworkday'] - wk - 7
+                    wmap['offsetprev'] = wmap['prevworkday'] - wkday - 7
                 else:
                     wmap['prevworkday'] = self.workdays[i-1]
-                    wmap['offsetprev'] = wmap['prevworkday'] - wk
+                    wmap['offsetprev'] = wmap['prevworkday'] - wkday
             else:
                 wmap['isworkday'] = False
                 # assign transition to next work day
-                after = [x for x in range(wk+1,7) if x in self.workdays]
+                after = [x for x in range(wkday+1, 7) if x in self.workdays]
                 if after: # there is a work day after this non-work day
                     wmap['nextworkday'] = after[0]
-                    wmap['offsetnext'] = wmap['nextworkday'] - wk
+                    wmap['offsetnext'] = wmap['nextworkday'] - wkday
                 else:
                     wmap['nextworkday'] = self.workdays[0]
-                    wmap['offsetnext'] = wmap['nextworkday'] + 7 - wk
+                    wmap['offsetnext'] = wmap['nextworkday'] + 7 - wkday
                 # assign transition to previous work day
-                before = [x for x in range(0,wk) if x in self.workdays]
+                before = [x for x in range(0, wkday) if x in self.workdays]
                 if before: # there is a work day before this non-work day
                     wmap['prevworkday'] = before[-1]
-                    wmap['offsetprev'] = wmap['prevworkday'] - wk
+                    wmap['offsetprev'] = wmap['prevworkday'] - wkday
                 else:
                     wmap['prevworkday'] = self.workdays[-1]
-                    wmap['offsetprev'] = wmap['prevworkday'] - wk - 7
+                    wmap['offsetprev'] = wmap['prevworkday'] - wkday - 7
             weekdaymap.append(DayOfWeek(**wmap))
         self.weekdaymap = weekdaymap
 
         # add holidays but eliminate non-work days and repetitions
-        holidays = set([parsefun(h) for h in holidays])
+        holidays = set([parsefun(hol) for hol in holidays])
         self.holidays = sorted(
-            [h for h in holidays if weekdaymap[h.weekday()].isworkday])
+            [hol for hol in holidays if weekdaymap[hol.weekday()].isworkday])
 
     def isworkday(self, date):
         """
@@ -382,6 +401,9 @@ class Calendar(object):
         return dateoffset
 
     def _workdaycount(self, date1, date2):
+        """
+        (PRIVATE) Count work days between two dates, ignoring holidays.
+        """
         nw, nd = divmod((date2 - date1).days, 7)
         ndays = nw * len(self.workdays)
         if nd > 0:
@@ -394,7 +416,7 @@ class Calendar(object):
 
     def workdaycount(self, date1, date2):
         """
-        Count work days between two dates (private), ignoring holidays.
+        Count work days between two dates, ignoring holidays.
 
         Args:
             date1 (date, datetime or str): Date start of interval.
@@ -496,7 +518,8 @@ class Calendar(object):
 
         return ndays * direction
 
-    def caleom(self, date):
+    @staticmethod
+    def caleom(date):
         """
         Adjust date to last day of the month, regardless of work days.
 
@@ -546,10 +569,10 @@ class Calendar(object):
         holidays = []
         holidx = 0
         if len(self.holidays):
-            ia = bisect.bisect_left(self.holidays, date1)
-            ib = bisect.bisect_left(self.holidays, date2)
-            if ib > ia:
-                holidays = self.holidays[ia:ib]
+            index1 = bisect.bisect_left(self.holidays, date1)
+            index2 = bisect.bisect_left(self.holidays, date2)
+            if index2 > index1:
+                holidays = self.holidays[index1:index2]
 
         datewk = date1.weekday()
         while date1 < date2:
