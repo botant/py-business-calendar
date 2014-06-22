@@ -35,6 +35,3 @@ MIT
 
 Antonio Botelho
 
-## Last modification ##
-
-11:15 PM Wednesday, December 11, 2013
