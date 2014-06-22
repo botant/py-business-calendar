@@ -1,9 +1,13 @@
-# business_calendar #
+business_calendar
+=================
 
 **business_calendar** is a Python package that implements simple business days 
 calculations. You can use a custom work week and a holiday list.
 
-## Example ##
+Example
+^^^^^^^
+
+.. code-block:: python
 
 	from business_calendar import Calendar, MO, TU, WE, TH, FR
 	import datetime
@@ -27,11 +31,9 @@ calculations. You can use a custom work week and a holiday list.
 	print('%s days between %s and %s' % \
 	    (cal.busdaycount(date1, date2), date1, date2)
 
-## License ##
+License
+^^^^^^^
 
 MIT
 
-## Developer ##
-
-Antonio Botelho
 
