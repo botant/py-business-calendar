@@ -4,6 +4,18 @@ business_calendar
 **business_calendar** is a Python package that implements simple business days 
 calculations. You can use a custom work week and a holiday list.
 
+.. image:: https://pypip.in/wheel/business_calendar/badge.png
+    :target: https://pypi.python.org/pypi/business_calendar/
+    :alt: Wheel Status
+.. image:: https://pypip.in/license/business_calendar/badge.png
+    :target: https://pypi.python.org/pypi/business_calendar/
+    :alt: License	
+	
+Documentation
+^^^^^^^^^^^^^
+
+You can find the latest documentation `here <http://py-business-calendar.readthedocs.org/en/latest/>`_.
+
 Example
 ^^^^^^^
 
