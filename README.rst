@@ -10,7 +10,10 @@ calculations. You can use a custom work week and a holiday list.
 .. image:: https://pypip.in/format/business_calendar/badge.png
     :target: https://pypi.python.org/pypi/business_calendar/
     :alt: Download format
-	
+.. image:: https://travis-ci.org/antoniobotelho/py-business-calendar.svg
+    :target: https://travis-ci.org/antoniobotelho/py-business-calendar
+    :alt: TravisCI
+
 Documentation
 ^^^^^^^^^^^^^
 
