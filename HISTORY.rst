@@ -12,5 +12,5 @@ History
 ^^^^^^^^^^^^^^^^^^
 
 - Fixed bug in work day calculation when end date was not a work day 
-(thanks Alexandre Teterin and Radim Novotný for reporting)
+(thanks Alexandre Teterin and Radim Novotny for reporting)
 
