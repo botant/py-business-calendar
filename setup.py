@@ -9,11 +9,10 @@ def read(*paths):
 
 setup(
     name='business_calendar',
-    version='0.2.0',
+    version='0.2.1',
     description='Simple business days, including custom work week and a holiday list.',
     long_description=(read('README.rst') + '\n\n' +
-                      read('HISTORY.rst') + '\n\n' +
-                      read('AUTHORS.rst')),
+                      read('HISTORY.rst')),
     url='https://github.com/antoniobotelho/py-business-calendar/',
     license='MIT',
     author='Antonio Botelho',
@@ -31,6 +30,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 	tests_require=['nose', 'python-dateutil'],

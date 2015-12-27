@@ -6,8 +6,8 @@ Credits
 
 Bug reporters
 ^^^^^^^^^^^^^
-Alexandre Teterin
-Radim Novotny
+- Alexandre Teterin
+- Radim Novotny
 
 
 Contributors
