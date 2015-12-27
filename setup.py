@@ -9,7 +9,7 @@ def read(*paths):
 
 setup(
     name='business_calendar',
-    version='0.1.0',
+    version='0.2.0',
     description='Simple business days, including custom work week and a holiday list.',
     long_description=(read('README.rst') + '\n\n' +
                       read('HISTORY.rst') + '\n\n' +
