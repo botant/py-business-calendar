@@ -404,6 +404,15 @@ class Calendar(object):
         """
         (PRIVATE) Count work days between two dates, ignoring holidays.
         """
+        assert date2 >= date1
+        date1wd = date1.weekday()
+        date2wd = date2.weekday()
+        if not self.weekdaymap[date2wd].isworkday:
+            date2 += datetime.timedelta(days=self.weekdaymap[date2wd].offsetprev)
+            date2wd = self.weekdaymap[date2wd].prevworkday
+        if date2 <= date1:
+            return 0
+        
         nw, nd = divmod((date2 - date1).days, 7)
         ndays = nw * len(self.workdays)
         if nd > 0:

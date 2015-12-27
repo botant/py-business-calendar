@@ -72,6 +72,9 @@ rr = init_rruleset()
 def gen_calendar_1():
     cal.range(datetime.datetime(2010,1,1), datetime.datetime(2013,12,31))
 
+def gen_busdaycount_1():
+    cal.busdaycount(datetime.datetime(2009,12,31), datetime.datetime(2013,12,31))
+
 def gen_rruleset_1():
     rr.between(datetime.datetime(2010,1,1), datetime.datetime(2013,12,31),
                inc=True)
@@ -79,12 +82,18 @@ def gen_rruleset_1():
 def gen_calendar_2():
     cal.range(datetime.datetime(2010,1,1), datetime.datetime(2010,3,1))
 
+def gen_busdaycount_2():
+    cal.busdaycount(datetime.datetime(2009,12,31), datetime.datetime(2010,3,1))
+
 def gen_rruleset_2():
     rr.between(datetime.datetime(2010,1,1), datetime.datetime(2010,3,1),
                inc=True)
 
 def gen_calendar_3():
     cal.range(datetime.datetime(1970,1,1), datetime.datetime(2030,12,31))
+
+def gen_busdaycount_3():
+    cal.busdaycount(datetime.datetime(1969,12,31), datetime.datetime(2030,12,31))
 
 def gen_rruleset_3():
     rr.between(datetime.datetime(1970,1,1), datetime.datetime(2030,12,31),
@@ -100,26 +109,41 @@ t = timeit.repeat('init_rruleset', repeat=3, number=10000000,
                   setup='from __main__ import init_rruleset')
 print('init rr: %.6fs' % min(t))
 
+
 t = timeit.repeat('gen_calendar_1', repeat=3, number=10000000,
                   setup='from __main__ import gen_calendar_1')
 print('gen cal medium: %.6fs' % min(t))
-
-t = timeit.repeat('gen_rruleset_1', repeat=3, number=10000000,
-                  setup='from __main__ import gen_rruleset_1')
-print('gen rr medium: %.6fs' % min(t))
 
 t = timeit.repeat('gen_calendar_2', repeat=3, number=10000000,
                   setup='from __main__ import gen_calendar_2')
 print('gen cal short: %.6fs' % min(t))
 
-t = timeit.repeat('gen_rruleset_2', repeat=3, number=10000000,
-                  setup='from __main__ import gen_rruleset_2')
-print('gen rr short: %.6fs' % min(t))
-
 t = timeit.repeat('gen_calendar_3', repeat=3, number=10000000,
                   setup='from __main__ import gen_calendar_3')
 print('gen cal long: %.6fs' % min(t))
 
+
+t = timeit.repeat('gen_rruleset_1', repeat=3, number=10000000,
+                  setup='from __main__ import gen_rruleset_1')
+print('gen rr medium: %.6fs' % min(t))
+
+t = timeit.repeat('gen_rruleset_2', repeat=3, number=10000000,
+                  setup='from __main__ import gen_rruleset_2')
+print('gen rr short: %.6fs' % min(t))
+
 t = timeit.repeat('gen_rruleset_3', repeat=3, number=10000000,
                   setup='from __main__ import gen_rruleset_3')
 print('gen rr long: %.6fs' % min(t))
+
+
+t = timeit.repeat('gen_busdaycount_1', repeat=3, number=10000000,
+                  setup='from __main__ import gen_busdaycount_1')
+print('busdaycount medium: %.6fs' % min(t))
+
+t = timeit.repeat('gen_busdaycount_2', repeat=3, number=10000000,
+                  setup='from __main__ import gen_busdaycount_2')
+print('busdaycount short: %.6fs' % min(t))
+
+t = timeit.repeat('gen_busdaycount_3', repeat=3, number=10000000,
+                  setup='from __main__ import gen_busdaycount_3')
+print('busdaycount long: %.6fs' % min(t))

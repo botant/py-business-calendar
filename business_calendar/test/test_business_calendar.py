@@ -53,6 +53,7 @@ Wednesday Dec 25, 2013
 Thursday Dec 26, 2013
 """
 
+
 class BaseCalendarTest(object):
     def __init__(self):
         self.cal = None
@@ -374,6 +375,17 @@ class TestCalendarWesternWeek(BaseCalendarTest):
                                 datetime.datetime(2013,12,31),
                                 inc=True)
 
+    def test_workdaycount_with_non_workday_dates(self):
+        print('test_workdaycount_with_non_workday_dates')
+        """ Jan 30th and 31st fall on a weekend """
+        daycount = 21;
+        for date2 in ['Jan 30, 2010','Jan 31, 2010','Feb 1, 2010']:
+            count = len(list(self.cal.range('2010-01-01', date2)));
+            assert count == daycount
+        for date2 in ['Jan 29, 2010','Jan 30, 2010','Jan 31, 2010']:
+            count = self.cal.workdaycount('Dec 31, 2009', date2);
+            assert count == daycount
+
 class TestCalendarCrazyWeek(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -412,6 +424,20 @@ class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
         self.dates = rr.between(datetime.datetime(2010,1,1),
                                 datetime.datetime(2013,12,31),
                                 inc=True)
+
+    def test_workdaycount_with_non_workday_dates(self):
+        print('test_workdaycount_with_non_workday_dates')
+        """ Jan 1st is a holiday, Jan 30th and 31st fall on a weekend """
+        daycount = 20;
+        for date2 in ['Jan 30, 2010','Jan 31, 2010','Feb 1, 2010']:
+            count = len(list(self.cal.range('2010-01-01', date2)));
+            assert count == daycount
+        for date2 in ['Jan 29, 2010','Jan 30, 2010','Jan 31, 2010']:
+            count = self.cal.workdaycount('Dec 31, 2009', date2);
+            assert count == daycount+1
+        for date2 in ['Jan 29, 2010','Jan 30, 2010','Jan 31, 2010']:
+            count = self.cal.busdaycount('Dec 31, 2009', date2);
+            assert count == daycount
 
 class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
     @classmethod
