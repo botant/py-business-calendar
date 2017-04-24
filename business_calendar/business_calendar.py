@@ -412,7 +412,7 @@ class Calendar(object):
             date2wd = self.weekdaymap[date2wd].prevworkday
         if date2 <= date1:
             return 0
-        
+
         nw, nd = divmod((date2 - date1).days, 7)
         ndays = nw * len(self.workdays)
         if nd > 0:
@@ -519,11 +519,9 @@ class Calendar(object):
                 # i is the index of first holiday > date
                 # we don't care if the start date is a holiday
                 i = bisect.bisect_right(holidays, date1)
-                while holidays[i] <= date2:
+                while i < len(holidays) and holidays[i] <= date2:
                     ndays -= 1
                     i += 1
-                    if i == len(holidays):
-                        break
 
         return ndays * direction
 
