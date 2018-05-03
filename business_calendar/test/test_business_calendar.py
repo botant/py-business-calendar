@@ -386,6 +386,7 @@ class TestCalendarWesternWeek(BaseCalendarTest):
             count = self.cal.workdaycount('Dec 31, 2009', date2);
             assert count == daycount
 
+
 class TestCalendarCrazyWeek(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -403,6 +404,7 @@ class TestCalendarCrazyWeek(BaseCalendarTest):
                                 datetime.datetime(2013,12,31),
                                 inc=True)
 
+
 class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -411,7 +413,7 @@ class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(holidays=self.holidays)
         self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
@@ -439,6 +441,7 @@ class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
             count = self.cal.busdaycount('Dec 31, 2009', date2);
             assert count == daycount
 
+
 class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -447,7 +450,7 @@ class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(workdays=[0,1,4,6], holidays=self.holidays)
         rr = rruleset()
         rr.rrule(rrule(DAILY,
@@ -460,6 +463,7 @@ class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
                                 datetime.datetime(2013,12,31),
                                 inc=True)
 
+
 class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -468,7 +472,7 @@ class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(workdays=[0], holidays=self.holidays)
         rr = rruleset()
         rr.rrule(rrule(DAILY,
