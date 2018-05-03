@@ -484,3 +484,75 @@ class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
         self.dates = rr.between(datetime.datetime(2010,1,1),
                                 datetime.datetime(2013,12,31),
                                 inc=True)
+
+
+class TestCalendarWithBusinessDays:
+    def test_weekend_is_business_day(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+
+        next_busday = cal.addbusdays(datetime.date(2018, 4, 27), 1)
+        assert datetime.date(2018, 4, 28) == next_busday
+
+        next_busday = cal.addbusdays(datetime.date(2018, 4, 27), 2)
+        assert datetime.date(2018, 4, 30) == next_busday
+
+        prev_busday = cal.addbusdays(datetime.date(2018, 4, 30), -1)
+        assert datetime.date(2018, 4, 28) == prev_busday
+
+        prev_busday = cal.addbusdays(datetime.date(2018, 4, 30), -2)
+        assert datetime.date(2018, 4, 27) == prev_busday
+
+    def test_busdaycount(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 30),
+        )
+        assert 2 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 30),
+            datetime.date(2018, 4, 27),
+        )
+        assert -2 == nbusdays
+
+        # time interval after business day
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 30),
+            datetime.date(2018, 5, 4),
+        )
+        assert 4 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 5, 4),
+            datetime.date(2018, 4, 30),
+        )
+        assert -4 == nbusdays
+
+        # time interval before business day
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 2),
+            datetime.date(2018, 4, 6),
+        )
+        assert 4 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 6),
+            datetime.date(2018, 4, 2),
+        )
+        assert -4 == nbusdays
+
+    def test_range(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+        busdays = list(cal.range(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 30),
+        ))
+        assert [
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 28),
+        ] == busdays

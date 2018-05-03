@@ -116,7 +116,7 @@ class Calendar(object):
     _idx_prevworkday = DayOfWeek._fields.index('prevworkday')
     _idx_offsetprev = DayOfWeek._fields.index('offsetprev')
 
-    def __init__(self, workdays=None, holidays=None):
+    def __init__(self, workdays=None, holidays=None, busdays=None):
         """
         Initialize object and creates the week day map.
 
@@ -126,6 +126,8 @@ class Calendar(object):
                 Defaults to [MO, TU, WE, TH, FR].
             holidays: List or tuple of holidays (or strings).
                 Default is [].
+            busdays: List or tuple of business days (or strings).
+                Default is [].
         """
         if workdays is None:
             self.workdays = [MO, TU, WE, TH, FR]
@@ -134,6 +136,9 @@ class Calendar(object):
 
         if holidays is None:
             holidays = []
+
+        if busdays is None:
+            busdays = []
 
         # create week day map structure in local variable to speed up
         # this structure is the soul of this class, it is used in all
@@ -185,6 +190,12 @@ class Calendar(object):
         self.holidays = sorted(
             [hol for hol in holidays if weekdaymap[hol.weekday()].isworkday])
 
+        # add business days but eliminate work days and repetitions
+        self.busdays = sorted([
+            bday for bday in {parsefun(bd) for bd in busdays}
+            if not weekdaymap[bday.weekday()].isworkday
+        ])
+
     def isworkday(self, date):
         """
         Check if a given date is a work date, ignoring holidays.
@@ -233,7 +244,11 @@ class Calendar(object):
         Returns:
             bool: True if the date is a business date, False otherwise.
         """
-        return self.isworkday(date) and not self.isholiday(date)
+        date = parsefun(date)
+        return (
+            date in self.busdays
+            or self.isworkday(date) and not self.isholiday(date)
+        )
 
     def adjust(self, date, mode):
         """
@@ -332,7 +347,8 @@ class Calendar(object):
 
     def addbusdays(self, date, offset):
         """
-        Add business days to a given date, taking holidays into consideration.
+        Add business days to a given date, taking holidays and business days
+        into consideration.
 
         Note:
             By definition, a zero offset causes the function to return the
@@ -353,8 +369,9 @@ class Calendar(object):
             return date
 
         dateoffset = self.addworkdays(date, offset)
-        holidays = self.holidays # speed up
-        if not holidays:
+        holidays = self.holidays
+        busdays = self.busdays
+        if not holidays and not busdays:
             return dateoffset
 
         weekdaymap = self.weekdaymap # speed up
@@ -398,6 +415,28 @@ class Calendar(object):
                              (date, offset))
                         break
 
+        if not busdays:
+            return dateoffset
+
+        start = date
+        finish = dateoffset
+        current_date = start
+        needed_busdays = offset
+
+        if offset > 0:
+            while needed_busdays > 0 and current_date <= finish:
+                current_date += datetime.timedelta(days=1)
+                if not self.isbusday(current_date):
+                    continue
+                needed_busdays -= 1
+        else:
+            while needed_busdays < 0 and current_date >= finish:
+                current_date -= datetime.timedelta(days=1)
+                if not self.isbusday(current_date):
+                    continue
+                needed_busdays += 1
+
+        dateoffset = current_date
         return dateoffset
 
     def _workdaycount(self, date1, date2):
@@ -495,6 +534,13 @@ class Calendar(object):
         else:
             direction = 1
 
+        if self.busdays:
+            busday_1_idx = bisect.bisect_left(self.busdays, date1)
+            busday_2_idx = bisect.bisect_left(self.busdays, date2)
+            n_busdays_between_dates = busday_2_idx - busday_1_idx
+        else:
+            n_busdays_between_dates = 0
+
         ndays = self._workdaycount(date1, date2)
 
         if self.holidays:
@@ -523,6 +569,7 @@ class Calendar(object):
                     ndays -= 1
                     i += 1
 
+        ndays += n_busdays_between_dates
         return ndays * direction
 
     @staticmethod
@@ -573,21 +620,7 @@ class Calendar(object):
         date1 = self.adjust(parsefun(date1), FOLLOWING)
         date2 = parsefun(date2)
 
-        holidays = []
-        holidx = 0
-        if len(self.holidays):
-            index1 = bisect.bisect_left(self.holidays, date1)
-            index2 = bisect.bisect_left(self.holidays, date2)
-            if index2 > index1:
-                holidays = self.holidays[index1:index2]
-
-        datewk = date1.weekday()
         while date1 < date2:
-            if (holidx < len(holidays)) and (holidays[holidx] == date1):
-                holidx += 1
-            else:
+            if self.isbusday(date1):
                 yield date1
-            date1 += datetime.timedelta(days=\
-                                        self.weekdaymap[datewk].offsetnext)
-            datewk = self.weekdaymap[datewk].nextworkday
-
+            date1 += datetime.timedelta(days=1)
