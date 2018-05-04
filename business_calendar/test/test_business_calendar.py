@@ -556,3 +556,10 @@ class TestCalendarWithBusinessDays:
             datetime.date(2018, 4, 27),
             datetime.date(2018, 4, 28),
         ] == busdays
+
+    def test_holidays_has_priority(self):
+        date = datetime.date(2018, 4, 28)
+        busdays = [date]
+        holidays = [date]
+        cal = Calendar(holidays=holidays, busdays=busdays)
+        assert not cal.isbusday(date)
