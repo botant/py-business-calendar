@@ -194,6 +194,7 @@ class Calendar(object):
         self.busdays = sorted([
             bday for bday in {parsefun(bd) for bd in busdays}
             if not weekdaymap[bday.weekday()].isworkday
+            and bday not in holidays
         ])
 
     def isworkday(self, date):
