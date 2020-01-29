@@ -116,7 +116,7 @@ class Calendar(object):
     _idx_prevworkday = DayOfWeek._fields.index('prevworkday')
     _idx_offsetprev = DayOfWeek._fields.index('offsetprev')
 
-    def __init__(self, workdays=None, holidays=None, busdays=None):
+    def __init__(self, workdays=None, holidays=None, busdays=None, specdays=None):
         """
         Initialize object and creates the week day map.
 
@@ -128,6 +128,8 @@ class Calendar(object):
                 Default is [].
             busdays: List or tuple of business days (or strings).
                 Default is [].
+            specdays: List or tuple of special workdays (or strings).
+                Default is [].
         """
         if workdays is None:
             self.workdays = [MO, TU, WE, TH, FR]
@@ -136,6 +138,9 @@ class Calendar(object):
 
         if holidays is None:
             holidays = []
+
+        if specdays is None:
+            specdays = []
 
         if busdays is None:
             busdays = []
@@ -190,12 +195,14 @@ class Calendar(object):
         self.holidays = sorted(
             [hol for hol in holidays if weekdaymap[hol.weekday()].isworkday])
 
-        # add business days but eliminate work days and repetitions
+        # add business days but eliminate work days
         self.busdays = sorted([
-            bday for bday in {parsefun(bd) for bd in busdays}
-            if not weekdaymap[bday.weekday()].isworkday
-            and bday not in holidays
+            bday for bday in {parsefun(bd) for bd in [*busdays, *specdays]}
+            if not (weekdaymap[bday.weekday()].isworkday and bday not in holidays)
         ])
+
+        # add special workdays
+        self.specdays = sorted(set([parsefun(sday) for sday in specdays]))
 
     def isworkday(self, date):
         """
@@ -248,8 +255,22 @@ class Calendar(object):
         date = parsefun(date)
         return (
             date in self.busdays
-            or self.isworkday(date) and not self.isholiday(date)
+            or (self.isworkday(date) and not self.isholiday(date))
         )
+
+    def isspecday(self, date):
+        """
+        Check if a given date is a business date, taking into consideration
+        the work days and holidays.
+
+        Args:
+            date (date, datetime or str): Date to be checked.
+
+        Returns:
+            bool: True if the date is a business date, False otherwise.
+        """
+        date = parsefun(date)
+        return date in self.specdays
 
     def adjust(self, date, mode):
         """
@@ -370,51 +391,52 @@ class Calendar(object):
             return date
 
         dateoffset = self.addworkdays(date, offset)
-        holidays = self.holidays
         busdays = self.busdays
+        holidays = [hol for hol in self.holidays if hol not in busdays]
         if not holidays and not busdays:
             return dateoffset
 
-        weekdaymap = self.weekdaymap # speed up
-        datewk = dateoffset.weekday()
-        if offset > 0:
-            # i is the index of first holiday > date
-            # we don't care if the start date is a holiday
-            i = bisect.bisect_right(holidays, date)
-            if i == len(holidays):
-                warn('Holiday list exhausted at end, ' \
-                     'addbusday(%s,%s) output may be incorrect.' % \
-                     (date, offset))
+        if holidays:
+            weekdaymap = self.weekdaymap # speed up
+            datewk = dateoffset.weekday()
+            if offset > 0:
+                # i is the index of first holiday > date
+                # we don't care if the start date is a holiday
+                i = bisect.bisect_right(holidays, date)
+                if i == len(holidays):
+                    warn('Holiday list exhausted at end, ' \
+                         'addbusday(%s,%s) output may be incorrect.' % \
+                         (date, offset))
+                else:
+                    while holidays[i] <= dateoffset:
+                        dateoffset += datetime.timedelta(days=\
+                                                    weekdaymap[datewk].offsetnext)
+                        datewk = weekdaymap[datewk].nextworkday
+                        i += 1
+                        if i == len(holidays):
+                            warn('Holiday list exhausted at end, ' \
+                                 'addbusday(%s,%s) output may be incorrect.' % \
+                                 (date, offset))
+                            break
             else:
-                while holidays[i] <= dateoffset:
-                    dateoffset += datetime.timedelta(days=\
-                                                weekdaymap[datewk].offsetnext)
-                    datewk = weekdaymap[datewk].nextworkday
-                    i += 1
-                    if i == len(holidays):
-                        warn('Holiday list exhausted at end, ' \
-                             'addbusday(%s,%s) output may be incorrect.' % \
-                             (date, offset))
-                        break
-        else:
-            # i is the index of first holiday >= date
-            # we don't care if the start date is a holiday
-            i = bisect.bisect_left(holidays, date) - 1
-            if i == -1:
-                warn('Holiday list exhausted at start, ' \
-                     'addbusday(%s,%s) output may be incorrect.' \
-                     % (date, offset))
-            else:
-                while holidays[i] >= dateoffset:
-                    dateoffset += datetime.timedelta(days=\
-                                                weekdaymap[datewk].offsetprev)
-                    datewk = weekdaymap[datewk].prevworkday
-                    i -= 1
-                    if i == -1:
-                        warn('Holiday list exhausted at start, ' \
-                             'addbusday(%s,%s) output may be incorrect.' % \
-                             (date, offset))
-                        break
+                # i is the index of first holiday >= date
+                # we don't care if the start date is a holiday
+                i = bisect.bisect_left(holidays, date) - 1
+                if i == -1:
+                    warn('Holiday list exhausted at start, ' \
+                         'addbusday(%s,%s) output may be incorrect.' \
+                         % (date, offset))
+                else:
+                    while holidays[i] >= dateoffset:
+                        dateoffset += datetime.timedelta(days=\
+                                                    weekdaymap[datewk].offsetprev)
+                        datewk = weekdaymap[datewk].prevworkday
+                        i -= 1
+                        if i == -1:
+                            warn('Holiday list exhausted at start, ' \
+                                 'addbusday(%s,%s) output may be incorrect.' % \
+                                 (date, offset))
+                            break
 
         if not busdays:
             return dateoffset
@@ -545,7 +567,7 @@ class Calendar(object):
         ndays = self._workdaycount(date1, date2)
 
         if self.holidays:
-            holidays = self.holidays # speed up
+            holidays = self.holidays # [hol for hol in self.holidays if hol not in self.busdays]  # speed up
             if date1 > holidays[-1]:
                 warn('Holiday list exhausted at end, ' \
                      'busdaycount(%s,%s) output may be incorrect.' % \

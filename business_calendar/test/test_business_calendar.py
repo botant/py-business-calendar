@@ -557,9 +557,78 @@ class TestCalendarWithBusinessDays:
             datetime.date(2018, 4, 28),
         ] == busdays
 
-    def test_holidays_has_priority(self):
+    def test_busdays_has_priority(self):
         date = datetime.date(2018, 4, 28)
         busdays = [date]
         holidays = [date]
         cal = Calendar(holidays=holidays, busdays=busdays)
-        assert not cal.isbusday(date)
+        assert cal.isbusday(date)
+
+
+class TestCalendarWithSpecialWorkdays:
+    @classmethod
+    def setup_class(cls):
+        print('\n\nTesting Calendar with special workdays')
+
+    def __init__(self):
+        self.holidays = dict(
+            hworkday=datetime.date(2018, 1, 1),
+            hworkday_two=datetime.date(2018, 1, 2),
+            hweekend_day=datetime.date(2018, 1, 7),
+        )
+        self.specdays = dict(
+            sholiday=datetime.date(2018, 1, 2),
+            sworkday=datetime.date(2018, 1, 5),
+            ssaturday=datetime.date(2018, 1, 13),
+        )
+        self.busdays = [datetime.date(2018, 1, 14)]
+        self.cal = Calendar(
+            specdays=self.specdays.values(),
+            holidays=self.holidays.values(),
+            busdays=self.busdays,
+        )
+        self.cal.warn_on_holiday_exhaustion = False
+        self.workdays = [
+            datetime.date(2018, 1, i)
+            for i in range(1, 15)
+            if self.cal.isworkday(datetime.date(2018, 1, i))
+               and not self.cal.isholiday(datetime.date(2018, 1, i))
+        ]
+
+    def test_isspecial(self):
+        print('test_special')
+        specdays = self.specdays.values()
+        for sday in specdays:
+            assert self.cal.isspecday(sday)
+        for hday in self.holidays.values():
+            if hday not in specdays:
+                assert not self.cal.isspecday(hday)
+
+    def test_special_days_are_also_busdays(self):
+        print('test_special_days_are_also_busdays')
+        for name, day in self.specdays.items():
+            if not 'workday' in name:
+                assert self.cal.isbusday(day)
+
+    def test_busdaycount(self):
+        print('test_busdaycount')
+        nbusdays = self.cal.busdaycount(
+            datetime.date(2018, 1, 1),
+            datetime.date(2018, 1, 15),
+        )
+        assert nbusdays == 12
+
+    def test_range(self):
+        print('test_range')
+        busdays = list(self.cal.range(
+            datetime.date(2018, 1, 1),
+            datetime.date(2018, 1, 15),
+
+        ))
+        check_busdays = [
+            self.specdays['sholiday'],
+            self.specdays['ssaturday'],
+            self.busdays[0]
+        ]
+        check_busdays.extend(self.workdays)
+        assert sorted(check_busdays) == busdays
