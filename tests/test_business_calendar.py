@@ -65,7 +65,7 @@ Thursday Dec 26, 2013
 
 def create_calendar_test_data(calendar_workdays, dateutil_workdays, holidays):
     """Creates calendar and generates list of dates using `dateutil'."""
-    calendar = Calendar(workdays=calendar_workdays)
+    calendar = Calendar(workdays=calendar_workdays, holidays=holidays)
     rr = rruleset()
     rr.rrule(
         rrule(
@@ -119,7 +119,7 @@ class TestCalendarMethods(object):
             if date in dates:
                 assert date == dateadj
                 i += 1
-            elif i < len(dates) - 1:
+            else:
                 assert dates[i + 1] == dateadj
             date += datetime.timedelta(days=1)
 
@@ -132,8 +132,8 @@ class TestCalendarMethods(object):
             if date in dates:
                 assert date == dateadj
                 i += 1
-            elif i >= 0:
-                assert dateadj == dates
+            else:
+                assert dateadj == dates[i]
             date += datetime.timedelta(days=1)
 
     def test_adjust_modifiedfollowing(self, calendar, dates, holidays):
@@ -145,22 +145,21 @@ class TestCalendarMethods(object):
             if date in dates:
                 assert date == dateadj
                 i += 1
-            elif 0 <= i < len(dates) - 1:
+            else:
                 j = i + (0 if dateadj.month != dates[i + 1].month else 1)
                 assert dateadj == dates[j]
             date += datetime.timedelta(days=1)
 
     def test_isbusday(self, calendar, dates, holidays):
-        """Tests that `isbuskday` returns `True` for known business days."""
+        """Tests that `isbusday` returns `True` for known business days."""
         for i in range(len(dates)):
             date = dates[i]
             assert calendar.isbusday(date)
-            if i > 0:
-                d = (date - dates[i - 1]).days
-                while d > 1:
-                    date -= datetime.timedelta(days=1)
-                    assert not calendar.isbusday(date)
-                    d -= 1
+            d = (date - dates[i - 1]).days
+            while d > 1:
+                date -= datetime.timedelta(days=1)
+                assert not calendar.isbusday(date)
+                d -= 1
 
     def test_isworkday(self, calendar, dates, holidays):
         """Tests that `isworkday` returns `True` for known work days."""
@@ -170,7 +169,7 @@ class TestCalendarMethods(object):
     def test_isholiday(self, calendar, dates, holidays):
         """Tests that `isholiday` returns `True` for known holidays."""
         for date in holidays:
-            assert not calendar.isworkday(date) and calendar.isholiday(date)
+            assert calendar.isholiday(date) or not calendar.isworkday(date)
 
     def test_add_one_workday(self, calendar, dates, holidays):
         """Tests adding one work day."""
@@ -244,219 +243,55 @@ class TestCalendarMethods(object):
                 d = calendar.workdaycount(dates[-1], dates[-1 - i])
             assert d == -i
 
+    def test_eom(self, calendar, dates, holidays):
+        """Tests End of Month calculation."""
+        for i in range(1, len(dates)):
+            if dates[i].month != dates[i - 1].month:
+                date = dates[i - 1] - datetime.timedelta(days=10)
+                calc_date = calendar.buseom(date)
+                assert dates[i - 1] == calc_date
 
-#
-# def test_add_one_workday_Jan01(self):
-#     err_count = 0
-#     for i in range(0, len(dates)):
-#         if holidays:
-#             calc_date = calendar.addbusdays("Jan 1, 2010", i + 1)
-#         else:
-#             calc_date = calendar.addbusdays("Jan 1, 2010", i)
-#         if calc_date != dates[i]:
-#             print(
-#                 "Error [%s] got %s expected %s"
-#                 % (dates[i - 1], calc_date, dates[i])
-#             )
-#             err_count += 1
-#         if err_count > 10:
-#             break
-#     assert err_count == 0
-#
-#
-#
-#
-# def test_eom(self):
-#     print("test_eom")
-#     err_count = 0
-#     for i in range(1, len(dates)):
-#         if dates[i].month != dates[i - 1].month:
-#             date = dates[i - 1] - datetime.timedelta(days=10)
-#             calc_date = calendar.buseom(date)
-#             if dates[i - 1] != calc_date:
-#                 print(
-#                     "Error [%s-%s] got %s expected %s"
-#                     % (
-#                         dates[i - 1].year,
-#                         dates[i - 1].month,
-#                         calc_date,
-#                         dates[i - 1],
-#                     )
-#                 )
-#                 err_count += 1
-#         if err_count > 10:
-#             break
-#     assert err_count == 0
-#
-#
-# def test_range(self):
-#     print("test_range")
-#     cal_dates = list(calendar.range("2010-01-01", "Jan 1, 2014"))
-#     assert cal_dates == dates
-#     for i in range(0, 200, 5):
-#         cal_dates = list(calendar.range(dates[i], dates[-i - 1]))
-#         assert cal_dates == dates[i : -i - 1]
-#     if not holidays:
-#         return
-#     for i in range(0, 20):
-#         cal_dates = list(
-#             calendar.range(holidays[i], holidays[-i - 1])
-#         )
-#         dates = self.rr.between(
-#             holidays[i], holidays[-i - 1], inc=False
-#         )
-#         assert cal_dates == dates
-#
-#
-# class TestCalendarWesternWeek(BaseCalendarTest):
-#     @classmethod
-#     def setup_class(cls):
-#         print("\n\nTesting regular week, Mo-Fr, no holidays, 2010-2013")
-#
-#     def __init__(self):
-#         BaseCalendarTest.__init__(self)
-#         calendar = Calendar()
-#         rr = rruleset()
-#         rr.rrule(
-#             rrule(
-#                 DAILY,
-#                 byweekday=(MO, TU, WE, TH, FR),
-#                 dtstart=datetime.datetime(2010, 1, 1),
-#             )
-#         )
-#         self.rr = rr
-#         dates = rr.between(
-#             datetime.datetime(2010, 1, 1),
-#             datetime.datetime(2013, 12, 31),
-#             inc=True,
-#         )
-#
-#     def test_workdaycount_with_non_workday_dates(self):
-#         print("test_workdaycount_with_non_workday_dates")
-#         """ Jan 30th and 31st fall on a weekend """
-#         daycount = 21
-#         for date2 in ["Jan 30, 2010", "Jan 31, 2010", "Feb 1, 2010"]:
-#             count = len(list(calendar.range("2010-01-01", date2)))
-#             assert count == daycount
-#         for date2 in ["Jan 29, 2010", "Jan 30, 2010", "Jan 31, 2010"]:
-#             count = calendar.workdaycount("Dec 31, 2009", date2)
-#             assert count == daycount
-#
-#
-# class TestCalendarCrazyWeek(BaseCalendarTest):
-#     @classmethod
-#     def setup_class(cls):
-#         print("\n\nTesting crazy week, Mo,Tu,Fr,Su, no holidays, 2010-2013")
-#
-#     def __init__(self):
-#         BaseCalendarTest.__init__(self)
-#         calendar = Calendar(workdays=[0, 1, 4, 6])
-#         rr = rruleset()
-#         rr.rrule(
-#             rrule(
-#                 DAILY,
-#                 byweekday=(MO, TU, FR, SU),
-#                 dtstart=datetime.datetime(2010, 1, 1),
-#             )
-#         )
-#         self.rr = rr
-#         dates = rr.between(
-#             datetime.datetime(2010, 1, 1),
-#             datetime.datetime(2013, 12, 31),
-#             inc=True,
-#         )
-#
-#
-# class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
-#     @classmethod
-#     def setup_class(cls):
-#         print("\n\nTesting regular week, Mo-Fr, WITH holidays, 2010-2013")
-#         warnings.filterwarnings("ignore", module="business_calendar")
-#
-#     def __init__(self):
-#         BaseCalendarTest.__init__(self)
-#         holidays = [parse(x) for x in global_holidays.split("\n")]
-#         calendar = Calendar(holidays=holidays)
-#         calendar.warn_on_holiday_exhaustion = False
-#         rr = rruleset()
-#         rr.rrule(
-#             rrule(
-#                 DAILY,
-#                 byweekday=(MO, TU, WE, TH, FR),
-#                 dtstart=datetime.datetime(2010, 1, 1),
-#             )
-#         )
-#         for h in holidays:
-#             rr.exdate(h)
-#         self.rr = rr
-#         dates = rr.between(
-#             datetime.datetime(2010, 1, 1),
-#             datetime.datetime(2013, 12, 31),
-#             inc=True,
-#         )
-#
-#     def test_workdaycount_with_non_workday_dates(self):
-#         print("test_workdaycount_with_non_workday_dates")
-#         """ Jan 1st is a holiday, Jan 30th and 31st fall on a weekend """
-#         daycount = 20
-#         for date2 in ["Jan 30, 2010", "Jan 31, 2010", "Feb 1, 2010"]:
-#             count = len(list(calendar.range("2010-01-01", date2)))
-#             assert count == daycount
-#         for date2 in ["Jan 29, 2010", "Jan 30, 2010", "Jan 31, 2010"]:
-#             count = calendar.workdaycount("Dec 31, 2009", date2)
-#             assert count == daycount + 1
-#         for date2 in ["Jan 29, 2010", "Jan 30, 2010", "Jan 31, 2010"]:
-#             count = calendar.busdaycount("Dec 31, 2009", date2)
-#             assert count == daycount
-#
-#
-# class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
-#     @classmethod
-#     def setup_class(cls):
-#         print("\n\nTesting crazy week, Mo,Tu,Fr,SU, WITH holidays, 2010-2013")
-#         warnings.filterwarnings("ignore", module="business_calendar")
-#
-#     def __init__(self):
-#         BaseCalendarTest.__init__(self)
-#         holidays = [parse(x) for x in global_holidays.split("\n")]
-#         calendar = Calendar(workdays=[0, 1, 4, 6], holidays=holidays)
-#         rr = rruleset()
-#         rr.rrule(
-#             rrule(
-#                 DAILY,
-#                 byweekday=(MO, TU, FR, SU),
-#                 dtstart=datetime.datetime(2010, 1, 1),
-#             )
-#         )
-#         for h in holidays:
-#             rr.exdate(h)
-#         self.rr = rr
-#         dates = rr.between(
-#             datetime.datetime(2010, 1, 1),
-#             datetime.datetime(2013, 12, 31),
-#             inc=True,
-#         )
-#
-#
-# class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
-#     @classmethod
-#     def setup_class(cls):
-#         print("\n\nTesting crazy week 2, Mo, WITH holidays, 2010-2013")
-#         warnings.filterwarnings("ignore", module="business_calendar")
-#
-#     def __init__(self):
-#         BaseCalendarTest.__init__(self)
-#         holidays = [parse(x) for x in global_holidays.split("\n")]
-#         calendar = Calendar(workdays=[0], holidays=holidays)
-#         rr = rruleset()
-#         rr.rrule(
-#             rrule(DAILY, byweekday=(MO), dtstart=datetime.datetime(2010, 1, 1))
-#         )
-#         for h in holidays:
-#             rr.exdate(h)
-#         self.rr = rr
-#         dates = rr.between(
-#             datetime.datetime(2010, 1, 1),
-#             datetime.datetime(2013, 12, 31),
-#             inc=True,
-#         )
+    def test_range(self, calendar, dates, holidays):
+        """Tests date range."""
+        cal_dates = list(calendar.range("2010-01-01", "Jan 1, 2014"))
+        assert cal_dates == dates
+        for i in range(0, 200, 5):
+            cal_dates = list(calendar.range(dates[i], dates[-i - 1]))
+            assert cal_dates == dates[i : -i - 1]
+
+
+@pytest.mark.parametrize(
+    "calendar, dates, holidays",
+    [
+        test_data['western_week_no_holidays'],
+        test_data['western_week_with_holidays'],
+    ],
+    ids=['western_week_no_holidays', 'western_week_with_holidays']
+)
+def test_workdaycount_on_non_work_day(calendar, dates, holidays):
+    """Tests workday count on non workday."""
+    # Jan 30th and 31st fall on a weekend.
+    # Jan 1st may or may not be a holiday.
+    if datetime.datetime(2010, 1, 1) in holidays:
+        daycount_jan_1st = 20
+        daycount_dec_31st = 21
+    else:
+        daycount_jan_1st = 21
+        daycount_dec_31st = 21
+
+    for date2 in ["Jan 30, 2010", "Jan 31, 2010", "Feb 1, 2010"]:
+        count = len(list(calendar.range("2010-01-01", date2)))
+        assert count == daycount_jan_1st
+    for date2 in ["Jan 29, 2010", "Jan 30, 2010", "Jan 31, 2010"]:
+        count = calendar.workdaycount("Dec 31, 2009", date2)
+        assert count == daycount_dec_31st
+
+
+def test_busdaycount_holiday_boundaries():
+    """Tests busdaycount when the boundaries are holidays."""
+    # 2017-07-04 is a Tuesday.
+    calendar = Calendar(holidays=["2017-07-04"])
+    count = calendar.busdaycount("2017-07-04", "2017-07-05")
+    assert count == 1
+    count = calendar.busdaycount("2017-07-03", "2017-07-04")
+    assert count == 0

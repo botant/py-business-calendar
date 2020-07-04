@@ -7,7 +7,9 @@ from dateutil.rrule import DAILY, FR, MO, TH, TU, WE, rrule, rruleset
 from business_calendar import Calendar
 
 
-global_holidays = """
+_HOLIDAYS = [
+    parse(holiday)
+    for holiday in """
 Friday Jan 1, 2010
 Friday Apr 2, 2010
 Monday May 3, 2010
@@ -52,13 +54,14 @@ Monday May 6, 2013
 Monday May 27, 2013
 Wednesday Dec 25, 2013
 Thursday Dec 26, 2013
-"""
-
-holidays = [parse(x) for x in global_holidays.split("\n")]
+""".strip().split(
+        "\n"
+    )
+]
 
 
 def init_calendar():
-    return Calendar(holidays=holidays)
+    return Calendar(holidays=_HOLIDAYS)
 
 
 def init_rruleset():
@@ -70,7 +73,7 @@ def init_rruleset():
             dtstart=datetime.datetime(2010, 1, 1),
         )
     )
-    for h in holidays:
+    for h in _HOLIDAYS:
         rr.exdate(h)
     return rr
 
