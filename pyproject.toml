@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=40.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.coverage.run]
+branch = true
+source = ["business-calendar"]
+
+[tool.coverage.paths]
+source = ["src", ".tox/*/site-packages"]
+
+[tool.coverage.report]
+show_missing = true
+
+
+[tool.black]
+line-length = 79
+
+
+[tool.isort]
+atomic=true
+force_grid_wrap=0
+include_trailing_comma=true
+lines_after_imports=2
+lines_between_types=1
+multi_line_output=3
+not_skip="__init__.py"
+use_parentheses=true
+known_first_party="business_calendar"
+known_third_party=["business_calendar", "dateutil", "pytest", "setuptools"]
