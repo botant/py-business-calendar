@@ -97,9 +97,7 @@ test_data = {
     "middle_east_week_with_holidays": create_calendar_test_data(
         (0, 1, 2, 3, 6), (MO, TU, WE, TH, SU), _HOLIDAYS
     ),
-    "monday_only_no_holidays": create_calendar_test_data(
-        (0,), (MO,), []
-    ),
+    "monday_only_no_holidays": create_calendar_test_data((0,), (MO,), []),
     "monday_only_with_holidays": create_calendar_test_data(
         (0,), (MO,), _HOLIDAYS
     ),
@@ -263,10 +261,10 @@ class TestCalendarMethods(object):
 @pytest.mark.parametrize(
     "calendar, dates, holidays",
     [
-        test_data['western_week_no_holidays'],
-        test_data['western_week_with_holidays'],
+        test_data["western_week_no_holidays"],
+        test_data["western_week_with_holidays"],
     ],
-    ids=['western_week_no_holidays', 'western_week_with_holidays']
+    ids=["western_week_no_holidays", "western_week_with_holidays"],
 )
 def test_workdaycount_on_non_work_day(calendar, dates, holidays):
     """Tests workday count on non workday."""
