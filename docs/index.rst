@@ -22,11 +22,11 @@ can decide what is best for you:
 
 **dateutil**:
     A great package with many functions that will let you generate any sort of
-    date list. Dateutil includes `relativedelta` that extend the calculations 
+    date list. Dateutil includes `relativedelta` that extend the calculations
     in the built-in `datetime`. I tried to use it to calculate things like date
     offsets with holidays and number of business days between two dates, and I
-    found that generating a huge list and searching wasn't ideal. It is my 
-    benchmark, and I use it in the unit tests to make sure the calculations are 
+    found that generating a huge list and searching wasn't ideal. It is my
+    benchmark, and I use it in the unit tests to make sure the calculations are
     correct.
 
 **numpy**:
@@ -41,7 +41,7 @@ can decide what is best for you:
       don't work with *sqlalchemy*, for example.
 
 **pandas**:
-    Pandas' date functionality uses the best features from `dateutil` and 
+    Pandas' date functionality uses the best features from `dateutil` and
 	`numpy`, which means it inherits their problems as well. The pandas class
     `CustomBusinessDay` is based on `numpy.busdaycalendar` and it is still in
     its adolescence. It also works on Pandas native date type which has to be
@@ -59,5 +59,3 @@ Contents
 
    cal
    license
-
-
