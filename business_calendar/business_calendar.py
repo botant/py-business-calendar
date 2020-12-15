@@ -519,11 +519,14 @@ class Calendar(object):
                 # i is the index of first holiday > date
                 # we don't care if the start date is a holiday
                 i = bisect.bisect_right(holidays, date1)
-                while holidays[i] <= date2:
-                    ndays -= 1
-                    i += 1
-                    if i == len(holidays):
-                        break
+                try:
+                    while holidays[i] <= date2:
+                        ndays -= 1
+                        i += 1
+                        if i == len(holidays):
+                            break
+                except IndexError:
+                    ndays = 0
 
         return ndays * direction
 
