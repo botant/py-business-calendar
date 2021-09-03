@@ -559,7 +559,7 @@ class Calendar(object):
 
         if self.busdays:
             busday_1_idx = bisect.bisect_left(self.busdays, date1)
-            busday_2_idx = bisect.bisect_left(self.busdays, date2)
+            busday_2_idx = bisect.bisect_right(self.busdays, date2)
             n_busdays_between_dates = busday_2_idx - busday_1_idx
         else:
             n_busdays_between_dates = 0

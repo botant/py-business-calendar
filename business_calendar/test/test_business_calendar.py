@@ -514,6 +514,12 @@ class TestCalendarWithBusinessDays:
         assert 2 == nbusdays
 
         nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 28),
+        )
+        assert 1 == nbusdays
+
+        nbusdays = cal.busdaycount(
             datetime.date(2018, 4, 30),
             datetime.date(2018, 4, 27),
         )
@@ -563,6 +569,20 @@ class TestCalendarWithBusinessDays:
         holidays = [date]
         cal = Calendar(holidays=holidays, busdays=busdays)
         assert cal.isbusday(date)
+
+    def test_multiple_business_days(self):
+        business_days = [datetime.date(2018, 4, 28), datetime.date(2018, 4, 29)]
+        holidays = [datetime.date(2018, 4, 23)]
+        cal = Calendar(busdays=business_days, holidays=holidays)
+
+        assert cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 29),
+        ) == 2
+        assert cal.busdaycount(
+            datetime.date(2018, 4, 22),
+            datetime.date(2018, 4, 29),
+        ) == 6
 
 
 class TestCalendarWithSpecialWorkdays:
