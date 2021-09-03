@@ -386,6 +386,7 @@ class TestCalendarWesternWeek(BaseCalendarTest):
             count = self.cal.workdaycount('Dec 31, 2009', date2);
             assert count == daycount
 
+
 class TestCalendarCrazyWeek(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -403,6 +404,7 @@ class TestCalendarCrazyWeek(BaseCalendarTest):
                                 datetime.datetime(2013,12,31),
                                 inc=True)
 
+
 class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -411,7 +413,7 @@ class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(holidays=self.holidays)
         self.cal.warn_on_holiday_exhaustion = False
         rr = rruleset()
@@ -439,6 +441,7 @@ class TestCalendarWesternWeekWithHolidays(BaseCalendarTest):
             count = self.cal.busdaycount('Dec 31, 2009', date2);
             assert count == daycount
 
+
 class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -447,7 +450,7 @@ class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(workdays=[0,1,4,6], holidays=self.holidays)
         rr = rruleset()
         rr.rrule(rrule(DAILY,
@@ -460,6 +463,7 @@ class TestCalendarCrazyWeekWithHolidays(BaseCalendarTest):
                                 datetime.datetime(2013,12,31),
                                 inc=True)
 
+
 class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
     @classmethod
     def setup_class(cls):
@@ -468,7 +472,7 @@ class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
 
     def __init__(self):
         BaseCalendarTest.__init__(self)
-        self.holidays = [parse(x) for x in global_holidays.split('\n')]
+        self.holidays = [parse(x) for x in global_holidays.split('\n') if x]
         self.cal = Calendar(workdays=[0], holidays=self.holidays)
         rr = rruleset()
         rr.rrule(rrule(DAILY,
@@ -480,3 +484,171 @@ class TestCalendarCrazyWeek2WithHolidays(BaseCalendarTest):
         self.dates = rr.between(datetime.datetime(2010,1,1),
                                 datetime.datetime(2013,12,31),
                                 inc=True)
+
+
+class TestCalendarWithBusinessDays:
+    def test_weekend_is_business_day(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+
+        next_busday = cal.addbusdays(datetime.date(2018, 4, 27), 1)
+        assert datetime.date(2018, 4, 28) == next_busday
+
+        next_busday = cal.addbusdays(datetime.date(2018, 4, 27), 2)
+        assert datetime.date(2018, 4, 30) == next_busday
+
+        prev_busday = cal.addbusdays(datetime.date(2018, 4, 30), -1)
+        assert datetime.date(2018, 4, 28) == prev_busday
+
+        prev_busday = cal.addbusdays(datetime.date(2018, 4, 30), -2)
+        assert datetime.date(2018, 4, 27) == prev_busday
+
+    def test_busdaycount(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 30),
+        )
+        assert 2 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 28),
+        )
+        assert 1 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 30),
+            datetime.date(2018, 4, 27),
+        )
+        assert -2 == nbusdays
+
+        # time interval after business day
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 30),
+            datetime.date(2018, 5, 4),
+        )
+        assert 4 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 5, 4),
+            datetime.date(2018, 4, 30),
+        )
+        assert -4 == nbusdays
+
+        # time interval before business day
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 2),
+            datetime.date(2018, 4, 6),
+        )
+        assert 4 == nbusdays
+
+        nbusdays = cal.busdaycount(
+            datetime.date(2018, 4, 6),
+            datetime.date(2018, 4, 2),
+        )
+        assert -4 == nbusdays
+
+    def test_range(self):
+        busdays = [datetime.date(2018, 4, 28)]
+        cal = Calendar(busdays=busdays)
+        busdays = list(cal.range(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 30),
+        ))
+        assert [
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 28),
+        ] == busdays
+
+    def test_busdays_has_priority(self):
+        date = datetime.date(2018, 4, 28)
+        busdays = [date]
+        holidays = [date]
+        cal = Calendar(holidays=holidays, busdays=busdays)
+        assert cal.isbusday(date)
+
+    def test_multiple_business_days(self):
+        business_days = [datetime.date(2018, 4, 28), datetime.date(2018, 4, 29)]
+        holidays = [datetime.date(2018, 4, 23)]
+        cal = Calendar(busdays=business_days, holidays=holidays)
+
+        assert cal.busdaycount(
+            datetime.date(2018, 4, 27),
+            datetime.date(2018, 4, 29),
+        ) == 2
+        assert cal.busdaycount(
+            datetime.date(2018, 4, 22),
+            datetime.date(2018, 4, 29),
+        ) == 6
+
+
+class TestCalendarWithSpecialWorkdays:
+    @classmethod
+    def setup_class(cls):
+        print('\n\nTesting Calendar with special workdays')
+
+    def __init__(self):
+        self.holidays = dict(
+            hworkday=datetime.date(2018, 1, 1),
+            hworkday_two=datetime.date(2018, 1, 2),
+            hweekend_day=datetime.date(2018, 1, 7),
+        )
+        self.specdays = dict(
+            sholiday=datetime.date(2018, 1, 2),
+            sworkday=datetime.date(2018, 1, 5),
+            ssaturday=datetime.date(2018, 1, 13),
+        )
+        self.busdays = [datetime.date(2018, 1, 14)]
+        self.cal = Calendar(
+            specdays=self.specdays.values(),
+            holidays=self.holidays.values(),
+            busdays=self.busdays,
+        )
+        self.cal.warn_on_holiday_exhaustion = False
+        self.workdays = [
+            datetime.date(2018, 1, i)
+            for i in range(1, 15)
+            if self.cal.isworkday(datetime.date(2018, 1, i))
+               and not self.cal.isholiday(datetime.date(2018, 1, i))
+        ]
+
+    def test_isspecial(self):
+        print('test_special')
+        specdays = self.specdays.values()
+        for sday in specdays:
+            assert self.cal.isspecday(sday)
+        for hday in self.holidays.values():
+            if hday not in specdays:
+                assert not self.cal.isspecday(hday)
+
+    def test_special_days_are_also_busdays(self):
+        print('test_special_days_are_also_busdays')
+        for name, day in self.specdays.items():
+            if not 'workday' in name:
+                assert self.cal.isbusday(day)
+
+    def test_busdaycount(self):
+        print('test_busdaycount')
+        nbusdays = self.cal.busdaycount(
+            datetime.date(2018, 1, 1),
+            datetime.date(2018, 1, 15),
+        )
+        assert nbusdays == 12
+
+    def test_range(self):
+        print('test_range')
+        busdays = list(self.cal.range(
+            datetime.date(2018, 1, 1),
+            datetime.date(2018, 1, 15),
+
+        ))
+        check_busdays = [
+            self.specdays['sholiday'],
+            self.specdays['ssaturday'],
+            self.busdays[0]
+        ]
+        check_busdays.extend(self.workdays)
+        assert sorted(check_busdays) == busdays
